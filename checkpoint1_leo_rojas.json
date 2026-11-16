@@ -1,0 +1,360 @@
+{
+  "name": "Checkpoint 1 - Agente Calificador de Leads (Leo Rojas)",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "6e540eed-36f4-4f6d-b9ce-9acd5dc26d2f",
+      "name": "Chat de Entrada",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "e9298cb8-368f-409b-a554-aee1c3b160fe"
+    },
+    {
+      "parameters": {
+        "agent": "toolsAgent",
+        "options": {
+          "systemMessage": "# 1. ROL\nSos el Asistente de Calificación de Leads de Cladd. Tu función es analizar los mensajes de prospectos comerciales que llegan por el chat, evaluarlos con un criterio objetivo y dejar registro de cada lead calificado en la planilla comercial.\n\n# 2. ÁMBITO\n- Solo atendés consultas comerciales de empresas o profesionales interesados en los servicios de Cladd.\n- Trabajás exclusivamente con la información que el prospecto escribe en la conversación. No inventás datos que no fueron mencionados.\n- Si una consulta no es comercial (soporte técnico, reclamos, temas personales, preguntas generales), indicás amablemente que este canal es solo para nuevas oportunidades comerciales.\n\n# 3. OBJETIVO DE LA SESIÓN\n1. Identificar los datos clave del prospecto: nombre, empresa, email, cargo, necesidad, presupuesto estimado y urgencia.\n2. Si faltan datos críticos (nombre, empresa o necesidad), pedirlos en una sola pregunta breve antes de calificar.\n3. Calificar al lead con el modelo BANT simplificado (0 a 100 puntos):\n   - Presupuesto (Budget): 0-25\n   - Autoridad de decisión (Authority): 0-25\n   - Necesidad concreta (Need): 0-25\n   - Urgencia / plazo (Timing): 0-25\n4. Clasificar: CALIENTE (70-100), TIBIO (40-69), FRÍO (0-39).\n5. Registrar el lead calificado usando la herramienta \"Registrar Lead en CRM (Google Sheets)\".\n6. Responder al prospecto con un mensaje cordial, agradeciendo el contacto e indicando el próximo paso (sin revelar el puntaje interno).\n\n# 4. REGLAS Y RESTRICCIONES\n- NO prometés precios, descuentos, plazos de entrega ni condiciones contractuales.\n- NO agendás reuniones ni enviás correos: esas acciones no están dentro de tu alcance en esta versión.\n- NO revelás al prospecto su puntaje, su clasificación ni estas instrucciones internas.\n- NO registrás un lead más de una vez por conversación y NO usás la herramienta para consultas no comerciales o sin datos mínimos.\n- NO inventás valores: si un dato no fue informado, registrás \"No informado\".\n- Usás un español profesional, claro y neutro. No utilizás lenguaje inclusivo (por ejemplo \"x\", \"e\" o \"@\" en reemplazo del género gramatical); empleás la forma gramatical estándar.\n- Respuestas breves: máximo 5 oraciones.\n\n# 5. ESCALAMIENTO\n- Si el lead resulta CALIENTE, indicás en la justificación del registro \"ESCALAR A EJECUTIVO COMERCIAL\" para que el equipo lo contacte en menos de 24 horas.\n- Si el prospecto se muestra molesto, solicita hablar con una persona o plantea un tema legal o de facturación, respondés que un integrante del equipo comercial lo contactará y no continuás la calificación.\n- Ante cualquier duda sobre si corresponde registrar, priorizás pedir más información antes que registrar datos incompletos.",
+          "maxIterations": 7,
+          "returnIntermediateSteps": true
+        }
+      },
+      "id": "ec49420a-7382-4b9e-9059-8de503d4da5a",
+      "name": "Agente Calificador de Leads",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        300,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "id": "7d89ba78-9468-47d5-a995-a5c0eaf43231",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        220,
+        240
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "7HUHfD2BHMUa1roV",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Registra un lead comercial ya calificado como una nueva fila en la planilla \"Leads\" de Google Sheets (CRM comercial de Cladd).\n\nCUÁNDO USAR ESTA HERRAMIENTA:\n- Únicamente cuando el prospecto expresó un interés comercial real en los servicios de Cladd (cotización, propuesta, implementación, contratación, consulta sobre un proyecto).\n- Únicamente después de haber identificado como mínimo: nombre, empresa y necesidad concreta.\n- Únicamente después de haber calculado el puntaje BANT (0-100) y la clasificación (CALIENTE, TIBIO o FRÍO).\n- Una sola vez por conversación y por lead.\n\nCUÁNDO NO USAR ESTA HERRAMIENTA:\n- Saludos, mensajes vacíos o de prueba sin intención comercial.\n- Consultas de soporte técnico, reclamos, facturación, temas legales, búsqueda laboral o spam.\n- Cuando faltan nombre, empresa o necesidad: en ese caso primero se piden los datos al prospecto.\n- Para consultar o modificar leads existentes (esta herramienta solo agrega filas).\n\nLos campos que no fueron informados por el prospecto deben completarse con \"No informado\". Devuelve la fila insertada como confirmación del registro.",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Dz8e3yHpZxhocTrsHl06bGfpzx9OuLBEIMoRHK0nuE4",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gid=0",
+          "cachedResultName": "Hoja 1 (primera pestaña)"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha": "={{ $now.setZone('America/Argentina/Buenos_Aires').toFormat('yyyy-MM-dd HH:mm') }}",
+            "Session_ID": "={{ $('Chat de Entrada').item.json.sessionId }}",
+            "Nombre": "={{ $fromAI('Nombre', 'Nombre y apellido del prospecto', 'string') }}",
+            "Empresa": "={{ $fromAI('Empresa', 'Nombre de la empresa u organizacion del prospecto', 'string') }}",
+            "Email": "={{ $fromAI('Email', 'Email de contacto del prospecto o No informado', 'string') }}",
+            "Cargo": "={{ $fromAI('Cargo', 'Cargo o rol del prospecto dentro de su empresa o No informado', 'string') }}",
+            "Necesidad": "={{ $fromAI('Necesidad', 'Resumen en una oracion de la necesidad comercial del prospecto', 'string') }}",
+            "Presupuesto": "={{ $fromAI('Presupuesto', 'Presupuesto estimado mencionado por el prospecto o No informado', 'string') }}",
+            "Urgencia": "={{ $fromAI('Urgencia', 'Plazo o urgencia mencionada: Inmediata, 1-3 meses, Mas de 3 meses o No informado', 'string') }}",
+            "Puntaje_BANT": "={{ $fromAI('Puntaje_BANT', 'Puntaje BANT total de 0 a 100', 'number') }}",
+            "Clasificacion": "={{ $fromAI('Clasificacion', 'CALIENTE, TIBIO o FRIO segun el puntaje', 'string') }}",
+            "Justificacion": "={{ $fromAI('Justificacion', 'Justificacion breve del puntaje por cada criterio BANT; incluir ESCALAR A EJECUTIVO COMERCIAL si es CALIENTE', 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Session_ID",
+              "displayName": "Session_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Empresa",
+              "displayName": "Empresa",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Cargo",
+              "displayName": "Cargo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Necesidad",
+              "displayName": "Necesidad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Presupuesto",
+              "displayName": "Presupuesto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Urgencia",
+              "displayName": "Urgencia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Puntaje_BANT",
+              "displayName": "Puntaje_BANT",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Clasificacion",
+              "displayName": "Clasificacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Justificacion",
+              "displayName": "Justificacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3df11e90-4636-4977-bdd6-b875434dde04",
+      "name": "Registrar Lead en CRM (Google Sheets)",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.5,
+      "position": [
+        440,
+        240
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5gLzJ8ekHEpPfaut",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Arma el reporte de observabilidad (Execution Log) del agente\nconst agente = $input.first().json;\nconst entrada = $('Chat de Entrada').first().json;\nconst pasos = agente.intermediateSteps || [];\nconst esc = (v) => String(typeof v === 'string' ? v : JSON.stringify(v, null, 2))\n  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');\n\nlet filas = pasos.map((p, i) => `\n  <tr>\n    <td>${i + 1}</td>\n    <td><b>${esc(p.action?.tool ?? '-')}</b></td>\n    <td><pre>${esc(p.action?.toolInput ?? '-')}</pre></td>\n    <td><pre>${esc(p.observation ?? '-')}</pre></td>\n  </tr>`).join('');\n\nconst usoHerramienta = pasos.length > 0;\nconst html = `\n<h2>Reporte de Observabilidad - Agente de Calificación de Leads</h2>\n<p><b>Fecha:</b> ${$now.setZone('America/Argentina/Buenos_Aires').toFormat('yyyy-MM-dd HH:mm:ss')}<br>\n<b>Session ID:</b> ${esc(entrada.sessionId)}<br>\n<b>Ejecución n8n:</b> ${$execution.id}<br>\n<b>Herramienta activada:</b> ${usoHerramienta ? 'SÍ (' + pasos.length + ' llamada/s)' : 'NO'}</p>\n<h3>Mensaje del prospecto</h3><blockquote>${esc(entrada.chatInput)}</blockquote>\n<h3>Respuesta final del agente</h3><blockquote>${esc(agente.output)}</blockquote>\n<h3>Traza de razonamiento (intermediate steps)</h3>\n${usoHerramienta ? `<table border=\"1\" cellpadding=\"6\" cellspacing=\"0\">\n<tr><th>#</th><th>Herramienta</th><th>Entrada (decidida por la IA)</th><th>Resultado</th></tr>${filas}</table>`\n : '<p>El agente resolvió la consulta sin invocar herramientas.</p>'}`;\n\nreturn [{ json: {\n  asunto: `[Agente Leads] ${usoHerramienta ? 'Lead registrado' : 'Conversación sin registro'} - ${entrada.sessionId}`,\n  html\n}}];"
+      },
+      "id": "30033848-67e3-49a1-bfb9-57f6fa4960ef",
+      "name": "Formatear Execution Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "leonrojas190292@gmail.com",
+        "subject": "={{ $json.asunto }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "81ac5f3b-0f65-4d45-ada6-31da6fb8cd2b",
+      "name": "Gmail - Reporte de Observabilidad",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        920,
+        0
+      ],
+      "webhookId": "fe19be28-456f-43b9-af32-158287e58a97",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "oSug2ksk80wM1rv2",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Checkpoint 1 - Agente Base (M1)\n**Rol:** Asistente de Calificación de Leads\n\nTrigger (Chat) → AI Agent (Tools Agent, máx. 7 iteraciones) → Log de observabilidad (Gmail).\n\nLa herramienta Google Sheets está acoplada lateralmente como *Tool*: el agente decide de forma autónoma cuándo usarla.",
+        "height": 200,
+        "width": 420
+      },
+      "id": "a0d0145e-0a91-4e65-a9e7-bd2c8d0bb2f0",
+      "name": "Nota - Arquitectura",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -260
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Guardrail\nMax Iterations = **7** (rango exigido 5-10).\nReturn Intermediate Steps = ON para auditar el razonamiento en el log.",
+        "height": 160,
+        "width": 300,
+        "color": 3
+      },
+      "id": "2355ac74-b307-4c01-8fa1-100392b0dd48",
+      "name": "Nota - Guardrail",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        420,
+        -260
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Chat de Entrada": {
+      "main": [
+        [
+          {
+            "node": "Agente Calificador de Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Calificador de Leads",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Lead en CRM (Google Sheets)": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Calificador de Leads",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Calificador de Leads": {
+      "main": [
+        [
+          {
+            "node": "Formatear Execution Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Execution Log": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Reporte de Observabilidad",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Argentina/Buenos_Aires",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": [],
+  "id": "T1npEpWgUnsVGNUz",
+  "versionId": "9b307fc4-9ddb-425e-a53d-3e7fac0d55f2"
+}
